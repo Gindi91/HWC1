@@ -69,10 +69,8 @@ void buffer_destroy(buffer_t* buffer){
 msg_t* put_bloccante(buffer_t* buffer, msg_t* msg){
 	if(msg!=NULL){
 		pthread_mutex_lock(&(buffer->mutexP));
-		/*if(slotLiberi(buffer)==0){
-			pthread_cond_wait(&(buffer->notFull),&(buffer->mutexP));
-		}*/
-		if(buffer->numM==buffer->size){
+
+		while(buffer->numM==buffer->size){
 			pthread_cond_wait(&(buffer->notFull),&(buffer->mutexP));
 		}
 		int index=buffer->indP;
@@ -98,50 +96,44 @@ void* args_put_bloccante(void* arguments) {
 // altrimenti effettua l’inserimento e restituisce il messaggio
 // inserito; N.B.: msg!=null
 msg_t* put_non_bloccante(buffer_t* buffer, msg_t* msg){
+	int index=buffer->indP;
+	int size=buffer->size;
+	pthread_mutex_lock(&(buffer->mutexP));
 	if(msg!=NULL){
-		pthread_mutex_lock(&(buffer->mutexP));
-
-		if(buffer->numM==buffer->size){
+		if(buffer->numM<size){
+			buffer->message[index]=*msg;
+			buffer->numM++;
+			buffer->indP=(index+1)%size;
+			pthread_cond_signal(&(buffer->notEmpty));
 			pthread_mutex_unlock(&(buffer->mutexP));
-			return BUFFER_ERROR;
+			return msg;
 		}
-
-		int index=buffer->indP;
-		int size=buffer->size;
-		buffer->message[index]=*msg;
-		buffer->numM++;
-		buffer->indP=(index+1)%size;
-		pthread_cond_signal(&(buffer->notEmpty));
-		pthread_mutex_unlock(&(buffer->mutexP));
-		return msg;
 			
 	}
+	pthread_mutex_unlock(&(buffer->mutexP));
 	return BUFFER_ERROR;
 }
 
 void* args_put_non_bloccante(void* arguments) {
     arg_t *args = arguments;
-    msg_t* msg = put_bloccante(args->buffer, args->msg);
+    msg_t* msg = put_non_bloccante(args->buffer, args->msg);
     pthread_exit(msg);
 }
 
 // estrazione bloccante: sospende se vuoto, quindi
 // restituisce il valore estratto non appena disponibile
 msg_t* get_bloccante(buffer_t* buffer){
+
 	pthread_mutex_lock(&(buffer->mutexC));
 	int size=buffer->size;
-	printf("%d\n",size);
-	printf("eccomi1\n");
 
-	if(buffer->numM==0){
+	while(buffer->numM==0){
 		pthread_cond_wait(&(buffer->notEmpty),&(buffer->mutexC));
-		printf("eccomi ma è pieno\n");
 	}
 
 	int index=buffer->indC;
 	msg_t* msg=(msg_t*)malloc(sizeof(msg_t));
 	msg=&buffer->message[index];
-	printf("eccomi che ho inserito\n");
 	buffer->message[index].msg_destroy;
 	buffer->numM--;
 	buffer->indC=(index+1)%size;
@@ -160,7 +152,7 @@ void* args_get_bloccante(void* buffer){
 msg_t* get_non_bloccante(buffer_t* buffer){
 	pthread_mutex_lock(&(buffer->mutexC));
 	int size=buffer->size;
-	if(slotLiberi(buffer)==size){
+	if(buffer->numM==0){
 		pthread_mutex_unlock(&(buffer->mutexC));
 		return BUFFER_ERROR;
 	}
@@ -176,20 +168,6 @@ msg_t* get_non_bloccante(buffer_t* buffer){
 }
 
 void* args_get_non_bloccante(void* buffer){
-    msg_t* msg = get_bloccante((buffer_t*) buffer);
+    msg_t* msg = get_non_bloccante((buffer_t*) buffer);
     pthread_exit(msg);
 }
-
-/*int slotLiberi(buffer_t* buffer) {
-	int c=0;
-	int size=buffer->size;
-	for (int i=0;i<size;i++){
-		msg_t* msg=(msg_t*)buffer->message[i].msg_copy;
-		if((msg)==NULL) c++;
-	}
-	return c;
-}
-
-int main(){
-	return 0;
-}*/

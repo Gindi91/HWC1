@@ -74,6 +74,6 @@ void* args_get_bloccante(void* buffer);
 msg_t* get_non_bloccante(buffer_t* buffer);
 void* args_get_non_bloccante(void* buffer);
 
-int slotLiberi(buffer_t* buffer);
+//int slotLiberi(buffer_t* buffer);
 
 #endif
