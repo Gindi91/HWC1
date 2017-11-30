@@ -17,18 +17,19 @@ typedef struct msg {
 } msg_t;
 
 typedef struct buffer {
-    int size; //dimensione
-    int indP; //indice per i produttori
-    int indC; //indice per i consumatori
-    msg_t* message; //contenuto del blocco
+ 	int size; //dimensione
+  	int indP; //indice per i produttori
+   	int indC; //indice per i consumatori
+	int numM; //numero messaggi nel buffer
+    	msg_t* message; //contenuto del blocco
 
-    pthread_mutex_t mutexP; //Mutex produttori
-    pthread_mutex_t mutexC; //Mutex consumatori
-    pthread_cond_t notEmpty; //Buffer non vuoto
-    pthread_cond_t notFull; //Buffer non pieno
+    	pthread_mutex_t mutexP; //Mutex produttori
+    	pthread_mutex_t mutexC; //Mutex consumatori
+    	pthread_cond_t notEmpty; //Buffer non vuoto
+    	pthread_cond_t notFull; //Buffer non pieno
 
-    struct buffer* (*buffer_init)(unsigned int); //creazione buffer
-    void (*buffer_destroy)(struct buffer*); //deallocazione buffer
+    	struct buffer* (*buffer_init)(unsigned int); //creazione buffer
+    	void (*buffer_destroy)(struct buffer*); //deallocazione buffer
 
 } buffer_t;
 

@@ -30,17 +30,24 @@ int clean_destroyBuffer(void){
 /*==============================================*/
 void test_notNull(void){
 	CU_ASSERT(buffer!=NULL);
+	CU_ASSERT(buffer->size==3);
 }
 
 void test_empty(void){
 	if(buffer!=NULL){
-		CU_ASSERT(slotLiberi(buffer)==buffer->size);
+		CU_ASSERT(buffer->numM==0);
 	}
 }
 
+/*void test_empty(void){
+	if(buffer!=NULL){
+		CU_ASSERT(slotLiberi(buffer)==buffer->size);
+	}
+}*/
+
 void test_notEmpty(void){
 	if(buffer!=NULL){
-		CU_ASSERT(slotLiberi(buffer)<buffer->size);
+		CU_ASSERT(buffer->numM>0);
 	}
 }
 
@@ -56,34 +63,22 @@ void test_single_put(void){
 		pthread_t thread;
 		int size=buffer->size;	
 
-		CU_ASSERT(slotLiberi(buffer)==3);
+		CU_ASSERT(buffer->numM==0);
 
 		pthread_create(&thread, NULL, args_put_bloccante, &args);
 		pthread_join(thread, (void*)&expected);
 
 		CU_ASSERT_EQUAL(msg, expected);
-		CU_ASSERT(slotLiberi(buffer)==2);
+		CU_ASSERT(buffer->numM==1);
 	}
 }
 
-void test_single_get(void){//non funziona
-	/*msg_t* expected=(msg_t*)buffer->message[0].msg_copy;
-	if(buffer!=NULL) {
-		pthread_t thread;
-		int size=buffer->size;	
-
-		CU_ASSERT(slotLiberi(buffer)==2);
-
-		pthread_create(&thread, NULL, args_get_bloccante, &buffer);
-		pthread_join(thread, (void*)&expected);
-
-		CU_ASSERT_EQUAL(msg, expected);
-		CU_ASSERT(slotLiberi(buffer)==3);
-	}*/
+void test_single_get(void){
 	pthread_t thread;
-	CU_ASSERT(slotLiberi(buffer)==2);
-	pthread_create(&thread, NULL, args_get_bloccante, &buffer);
-	CU_ASSERT(slotLiberi(buffer)==3);
+	CU_ASSERT(buffer->numM==1);
+	pthread_create(&thread, NULL, args_get_bloccante, buffer);
+	pthread_join(thread, (void*)&msg);
+	CU_ASSERT(buffer->numM==0);
 	
 }
 /*==============================================*/
@@ -101,7 +96,7 @@ int main(){
 	}
 	
 	//adding tests
-	if ((CU_add_test(prova, "non nullo", test_notNull)==NULL)||(CU_add_test(prova, "vuoto", test_empty)==NULL)||(CU_add_test(prova, "put singola", test_single_put)==NULL)||(CU_add_test(prova, "non più vuoto", test_notEmpty)==NULL)||(CU_add_test(prova, "get singola", test_single_get)==NULL)){
+	if ((CU_add_test(prova, "non nullo", test_notNull)==NULL)||(CU_add_test(prova, "vuoto", test_empty)==NULL)||(CU_add_test(prova, "put singola", test_single_put)==NULL)||(CU_add_test(prova, "non più vuoto", test_notEmpty)==NULL)||(CU_add_test(prova, "get singola", test_single_get)==NULL)||(CU_add_test(prova, "di nuovo vuoto", test_empty)==NULL)){
       		CU_cleanup_registry();
       		return CU_get_error();
    	}
