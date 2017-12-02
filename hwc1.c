@@ -1,6 +1,7 @@
 #include "hwc1.h"
 #include <pthread.h>
 
+//creazione, distruzione e copia messaggi
 msg_t * msg_init_string(void* content){
 	msg_t * msg=(msg_t*)malloc(sizeof(msg_t));
     	char* string=(char*)content;
@@ -23,8 +24,8 @@ msg_t * msg_copy_string(msg_t* msg) {
     	return msg->msg_init(msg->content);
 }
 
-/* allocazione / deallocazione  buffer */
-// creazione di un buffer vuoto di dim. max nota
+/* allocazione/deallocazione buffer */
+//creazione di un buffer vuoto di dim. max nota
 buffer_t* buffer_init(unsigned int maxsize){
 	buffer_t* buffer=(buffer_t*)malloc(sizeof(buffer_t));
 	buffer->message=(msg_t*)calloc(maxsize, sizeof(msg_t));
@@ -45,7 +46,7 @@ buffer_t* buffer_init(unsigned int maxsize){
 return buffer;
 }
 
-// deallocazione di un buffer
+//deallocazione di un buffer
 void buffer_destroy(buffer_t* buffer){
 	pthread_mutex_destroy(&(buffer->mutexP));
 	pthread_mutex_destroy(&(buffer->mutexC));
@@ -63,9 +64,9 @@ void buffer_destroy(buffer_t* buffer){
 }
 
 /* operazioni sul buffer */
-// inserimento bloccante: sospende se pieno, quindi
-// effettua l’inserimento non appena si libera dello spazio
-// restituisce il messaggio inserito; N.B.: msg!=null
+//inserimento bloccante: sospende se pieno, quindi
+//effettua l’inserimento non appena si libera dello spazio
+//restituisce il messaggio inserito; N.B.: msg!=null
 msg_t* put_bloccante(buffer_t* buffer, msg_t* msg){
 	if(msg!=NULL){
 		pthread_mutex_lock(&(buffer->mutexP));
@@ -86,21 +87,23 @@ msg_t* put_bloccante(buffer_t* buffer, msg_t* msg){
 	return BUFFER_ERROR;
 }
 
+//argomenti per la funzione put bloccante
 void* args_put_bloccante(void* arguments) {
-    arg_t *args = arguments;
-    msg_t* msg = put_bloccante(args->buffer, args->msg);
-    pthread_exit(msg);
+    	arg_t* args=arguments;
+    	msg_t* msg=put_bloccante(args->buffer, args->msg);
+    	pthread_exit(msg);
 }
 
-// inserimento non bloccante: restituisce BUFFER_ERROR se pieno,
-// altrimenti effettua l’inserimento e restituisce il messaggio
-// inserito; N.B.: msg!=null
+//inserimento non bloccante: restituisce BUFFER_ERROR se pieno,
+//altrimenti effettua l’inserimento e restituisce il messaggio
+//inserito; N.B.: msg!=null
 msg_t* put_non_bloccante(buffer_t* buffer, msg_t* msg){
 	int index=buffer->indP;
 	int size=buffer->size;
 	pthread_mutex_lock(&(buffer->mutexP));
 	if(msg!=NULL){
 		if(buffer->numM<size){
+			//printf("%s\n", (char*) *(&msg->content));
 			buffer->message[index]=*msg;
 			buffer->numM++;
 			buffer->indP=(index+1)%size;
@@ -110,18 +113,20 @@ msg_t* put_non_bloccante(buffer_t* buffer, msg_t* msg){
 		}
 			
 	}
+	//printf("%s\n", (char*) *(&msg->content));
 	pthread_mutex_unlock(&(buffer->mutexP));
 	return BUFFER_ERROR;
 }
 
+//argomenti per la funzione put non bloccante
 void* args_put_non_bloccante(void* arguments) {
-    arg_t *args = arguments;
-    msg_t* msg = put_non_bloccante(args->buffer, args->msg);
-    pthread_exit(msg);
+    	arg_t* args=arguments;
+    	msg_t* msg=put_non_bloccante(args->buffer, args->msg);
+    	pthread_exit(msg);
 }
 
-// estrazione bloccante: sospende se vuoto, quindi
-// restituisce il valore estratto non appena disponibile
+//estrazione bloccante: sospende se vuoto, quindi
+//restituisce il valore estratto non appena disponibile
 msg_t* get_bloccante(buffer_t* buffer){
 
 	pthread_mutex_lock(&(buffer->mutexC));
@@ -132,8 +137,7 @@ msg_t* get_bloccante(buffer_t* buffer){
 	}
 
 	int index=buffer->indC;
-	msg_t* msg=(msg_t*)malloc(sizeof(msg_t));
-	msg=&buffer->message[index];
+	msg_t* msg=msg_init_string(buffer->message[index].content);
 	buffer->message[index].msg_destroy;
 	buffer->numM--;
 	buffer->indC=(index+1)%size;
@@ -142,13 +146,14 @@ msg_t* get_bloccante(buffer_t* buffer){
 	return msg;
 }
 
+//argomenti per la funzione get bloccante
 void* args_get_bloccante(void* buffer){
-    msg_t* msg = get_bloccante((buffer_t*) buffer);
-    pthread_exit(msg);
+    	msg_t* msg=get_bloccante((buffer_t*) buffer);
+    	pthread_exit(msg);
 }
 
-// estrazione non bloccante: restituisce BUFFER_ERROR se vuoto
-// ed il valore estratto in caso contrario
+//estrazione non bloccante: restituisce BUFFER_ERROR se vuoto
+//ed il valore estratto in caso contrario
 msg_t* get_non_bloccante(buffer_t* buffer){
 	pthread_mutex_lock(&(buffer->mutexC));
 	int size=buffer->size;
@@ -157,8 +162,7 @@ msg_t* get_non_bloccante(buffer_t* buffer){
 		return BUFFER_ERROR;
 	}
 	int index=buffer->indC;
-	msg_t* msg=(msg_t*)malloc(sizeof(msg_t));
-	msg=(msg_t*)buffer->message[index].msg_copy;
+	msg_t* msg=msg_init_string(buffer->message[index].content);
 	buffer->message[index].msg_destroy;
 	buffer->numM--;
 	buffer->indC=(index+1)%size;
@@ -167,7 +171,8 @@ msg_t* get_non_bloccante(buffer_t* buffer){
 	return msg;
 }
 
+//argomenti per la funzione get non bloccante
 void* args_get_non_bloccante(void* buffer){
-    msg_t* msg = get_non_bloccante((buffer_t*) buffer);
-    pthread_exit(msg);
+    	msg_t* msg=get_non_bloccante((buffer_t*) buffer);
+    	pthread_exit(msg);
 }

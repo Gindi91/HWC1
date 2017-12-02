@@ -8,11 +8,11 @@
 
 typedef struct msg {
 
-    void* content; // generico contenuto del messaggio
+    	void* content; // generico contenuto del messaggio
 
-    struct msg * (*msg_init)(void*); // creazione msg
-    void (*msg_destroy)(struct msg *); // deallocazione msg
-    struct msg * (*msg_copy)(struct msg *); // creazione/copia msg
+    	struct msg * (*msg_init)(void*); // creazione msg
+    	void (*msg_destroy)(struct msg *); // deallocazione msg
+    	struct msg * (*msg_copy)(struct msg *); // creazione/copia msg
 
 } msg_t;
 
@@ -34,8 +34,8 @@ typedef struct buffer {
 } buffer_t;
 
 typedef struct args {
-    buffer_t* buffer;
-    msg_t* msg;
+    	buffer_t* buffer;
+    	msg_t* msg;
 } arg_t;
 
 msg_t* msg_init_string(void* content);
@@ -73,7 +73,5 @@ void* args_get_bloccante(void* buffer);
 // ed il valore estratto in caso contrario
 msg_t* get_non_bloccante(buffer_t* buffer);
 void* args_get_non_bloccante(void* buffer);
-
-//int slotLiberi(buffer_t* buffer);
 
 #endif
